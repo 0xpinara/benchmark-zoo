@@ -244,9 +244,11 @@ def figure_exposure_dose_response(d: dict) -> None:
     ax.plot(tt, p["observed_sd_alpha_bps"], marker="o", label=r"observed SD($\hat\alpha$)")
     ax.plot(tt, p["pure_noise_sd_alpha_bps"], marker="s", ls="--",
             label=r"pure estimation noise ($\propto 1/\sqrt{T}$)")
-    ax.axhline(p["sd_persistent_alpha_bps"], color="0.4", ls=":", lw=1)
-    ax.text(tt[-1], p["sd_persistent_alpha_bps"], "  persistent component",
-            color="0.4", fontsize=7, va="bottom", ha="right")
+    dj = d["a4_sqrt_t"]["vw"]["disjoint"]
+    ax.axhline(dj["sd_persistent_bps"], color="0.4", ls=":", lw=1)
+    ax.text(tt[-1], dj["sd_persistent_bps"] + 0.4,
+            "  persistent across decades", color="0.4", fontsize=7,
+            va="bottom", ha="right")
     ax.set_xlabel("Window length $T$ (months, most recent)")
     ax.set_ylabel("Basis points per month")
     ax.set_ylim(0, None)
@@ -294,6 +296,7 @@ def write_macros(d: dict) -> None:
         "amVarRbarVw": (dc["var_rbar"] * 1e4, 2),
         "amVarExposureVw": (dc["var_exposure"] * 1e4, 2),
         "amVarCovTermVw": (dc["minus_two_cov"] * 1e4, 2),
+        "amCovTermVw": (-0.5 * dc["minus_two_cov"] * 1e4, 2),
         "amSdRatioVw": (dc["sd_ratio_alpha_over_rbar"], 3),
         "amIncreaseExposurePct": (dc["increase_share_from_exposure_var"] * 100, 0),
         "amIncreaseCovPct": (dc["increase_share_from_covariance"] * 100, 0),
@@ -305,11 +308,19 @@ def write_macros(d: dict) -> None:
         "amDecileNumeratorRatio": (a3[-1]["sd_alpha_bps"] / a3[0]["sd_alpha_bps"], 2),
         "amDecileDenominatorRatio": (
             a3[-1]["median_alpha_se_bps"] / a3[0]["median_alpha_se_bps"], 2),
-        # A4
-        "amPersistentAlphaBps": (a4["persistence_fit"]["sd_persistent_alpha_bps"], 1),
-        "amPersistentSharePct": (a4["persistence_fit"]["share_persistent_at_720"] * 100, 0),
+        # A4.  The nested-window fit is kept as a descriptive curve only; the
+        # inferential numbers all come from the disjoint-block test, whose
+        # points do not share data and therefore support a standard error.
         "amNoiseOnlyAlphaBps": (a4["persistence_fit"]["pure_noise_sd_alpha_bps"][-1], 1),
         "amObservedAlphaBpsLong": (a4["persistence_fit"]["observed_sd_alpha_bps"][-1], 1),
+        "amBlockMonths": a4["disjoint"]["block_months"],
+        "amNBlocks": a4["disjoint"]["n_blocks"],
+        "amPersistentBps": (a4["disjoint"]["sd_persistent_bps"], 2),
+        "amPersistentLoBps": (a4["disjoint"]["sd_persistent_ci95_bps"][0], 2),
+        "amPersistentHiBps": (a4["disjoint"]["sd_persistent_ci95_bps"][1], 2),
+        "amPersistentSharePct": (a4["disjoint"]["share_of_within_that_persists"] * 100, 1),
+        "amWithinBlockSdBps": (a4["disjoint"]["within_block_var_bps2"] ** 0.5, 1),
+        "amPersistentBootP": (a4["disjoint"]["bootstrap_p_cov_le_zero"], 3),
         # A5
         "amShareRmwCmaPct": (
             (a5["factor_terms"]["rmw"]["share_of_var_exposure"]
@@ -322,10 +333,12 @@ def write_macros(d: dict) -> None:
         "amPlaceboBoot": (a6["residual_bootstrap"]["sd_alpha_t_mean"], 3),
         # A7
         "amWinnerName": a7["signalname"].replace("_", r"\_"),
-        "amWinnerAlphaT": (abs(a7["alpha_t"]), 2),
-        "amWinnerMeanT": (abs(a7["mean_return_t"]), 2),
-        "amWinnerAlphaBps": (abs(a7["alpha_bps_per_month"]), 0),
-        "amWinnerExposureBps": (abs(a7["exposure_bps_per_month"]), 0),
+        "amWinnerAlphaT": (a7["alpha_t"], 2),
+        "amWinnerMeanT": (a7["mean_return_t"], 2),
+        "amWinnerAlphaBps": (a7["alpha_bps_per_month"], 1),
+        "amWinnerRbarBps": (a7["mean_return_bps_per_month"], 1),
+        "amWinnerExposureBps": (a7["exposure_bps_per_month"], 1),
+        "amWinnerAbsAlphaT": (abs(a7["alpha_t"]), 2),
         # A8
         "amPubN": a8["n_predictors"],
         "amPubAlphaOnly": a8["at_measured_cutoffs"]["n_alpha_only"],

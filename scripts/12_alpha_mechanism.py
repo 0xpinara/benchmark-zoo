@@ -376,6 +376,90 @@ def a3_within_population(panels: dict, factors: pd.DataFrame) -> dict:
 # A4
 
 
+def disjoint_persistence(
+    sub: pd.DataFrame,
+    factors: pd.DataFrame,
+    block: int = 120,
+    n_boot: int = 400,
+    seed: int = SEED,
+) -> dict:
+    """Is the persistent alpha dispersion different from zero?
+
+    The nested-window fit in :func:`a4_sqrt_t` cannot answer this. Its points
+    share most of their data --- the 600-month window contains the 120-month
+    one --- so they are heavily dependent and any conventional standard error
+    on the fitted intercept is meaningless. A referee will ask whether
+    $V_\\infty$ differs from zero, and the nested fit cannot say.
+
+    This is the version that can. Split the sample into disjoint 120-month
+    blocks, estimate the five-factor alpha of every strategy separately in
+    each, and compare two quantities:
+
+    ``within``   the cross-sectional variance of alpha_hat inside one block,
+                 which contains both real dispersion and estimation noise;
+    ``covariance`` the average cross-sectional covariance of alpha_hat between
+                 two *different* blocks.
+
+    Estimation noise is independent across disjoint blocks, so it contributes
+    to the first and not to the second. The between-block covariance is
+    therefore an unbiased estimate of the variance of the persistent component
+    on its own, and it is negative in expectation if there is none. This is the
+    same identification a test-retest reliability estimate uses, and the point
+    is that it needs no functional form for how noise decays with T.
+
+    The standard error comes from a bootstrap over strategies (not over
+    months): strategies are the unit we resample because the blocks are fixed
+    by the calendar and the cross-section is what carries the sampling
+    variation in a cross-sectional variance.
+    """
+    months = regression_sample(sub, factors, FF5)
+    n_blocks = len(months) // block
+    if n_blocks < 2:
+        return {"error": "fewer than two disjoint blocks available"}
+
+    alphas = []
+    for b in range(n_blocks):
+        win = sub.loc[months[b * block:(b + 1) * block]]
+        res = fit_model(win, factors, FF5, min_months=block)
+        alphas.append(res["alpha"])
+    a = pd.concat(alphas, axis=1).dropna()
+    arr = a.to_numpy(dtype=np.float64)          # (n_strategies, n_blocks)
+    arr = arr - arr.mean(axis=0, keepdims=True)  # centre each block
+
+    def stats_from(x: np.ndarray) -> "tuple[float, float]":
+        n = x.shape[0]
+        within = float(np.mean(np.var(x, axis=0, ddof=1)))
+        c = x.T @ x / (n - 1)
+        off = c[~np.eye(c.shape[0], dtype=bool)]
+        return within, float(off.mean())
+
+    within, between = stats_from(arr)
+    rng = np.random.default_rng(seed)
+    boot = np.array([
+        stats_from(arr[rng.integers(0, arr.shape[0], arr.shape[0])])[1]
+        for _ in range(n_boot)
+    ])
+    lo, hi = np.quantile(boot, [0.025, 0.975])
+
+    return {
+        "block_months": block,
+        "n_blocks": int(n_blocks),
+        "n_strategies": int(arr.shape[0]),
+        "block_starts": [str(months[b * block].date()) for b in range(n_blocks)],
+        "within_block_var_bps2": float(within * 1e4),
+        "between_block_cov_bps2": float(between * 1e4),
+        "sd_persistent_bps": float(np.sqrt(max(between, 0.0)) * 100.0),
+        "sd_persistent_ci95_bps": [
+            float(np.sign(lo) * np.sqrt(abs(lo)) * 100.0),
+            float(np.sqrt(max(hi, 0.0)) * 100.0),
+        ],
+        "between_cov_ci95_bps2": [float(lo * 1e4), float(hi * 1e4)],
+        "bootstrap_p_cov_le_zero": float(np.mean(boot <= 0.0)),
+        "share_of_within_that_persists": float(between / within),
+        "n_bootstrap": int(n_boot),
+    }
+
+
 def a4_sqrt_t(panels: dict, factors: pd.DataFrame) -> dict:
     """Does SD(t_alpha) grow like sqrt(T) while SD(t_mean) stays flat?
 
@@ -447,6 +531,7 @@ def a4_sqrt_t(panels: dict, factors: pd.DataFrame) -> dict:
             "predicted_sd_alpha_t": [float(p) for p in pred],
             "rmse_alpha": float(np.sqrt(np.mean((obs - pred) ** 2))),
             "max_abs_error_alpha": float(np.max(np.abs(obs - pred))),
+            "disjoint": disjoint_persistence(sub, factors, seed=SEED),
             "persistence_fit": {
                 "note": (
                     "Var(alpha_hat_T) = V_inf + k/T. V_inf is the dispersion "
