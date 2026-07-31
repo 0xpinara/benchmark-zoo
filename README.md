@@ -22,7 +22,7 @@ The package has two halves that share one statistical core.
 ## Install
 
 ```bash
-git clone https://github.com/ANONYMISED/benchmark-zoo && cd benchmark-zoo
+git clone https://github.com/0xpinara/benchmark-zoo && cd benchmark-zoo
 make env            # python3 -m venv .venv, then pip install -e ".[dev,ml]"
 make test           # the test suite, no data needed
 ```
