@@ -1,0 +1,35 @@
+# Machine learning testbed configuration.
+
+benchmark_family: transductive node classification
+metric: accuracy
+config_seed: 20260901
+analysis_seed: 20260901
+baseline_arch: gcn
+
+architectures: [mlp, gcn, sage, gcn_noprop, gcn_unnorm, sage_noneigh]
+ablations:
+  gcn_noprop: gcn      # propagation removed, parameter count kept
+  gcn_unnorm: gcn      # degree normalisation removed
+  sage_noneigh: sage   # neighbour aggregation branch removed
+
+search_space:
+  n_hidden: [32, 64, 128, 256]
+  n_layers: [2, 3]
+  dropout: [0.0, 0.2, 0.5, 0.7]
+  lr: [0.001, 0.003, 0.01, 0.03]
+  weight_decay: [0.0, 1.0e-5, 5.0e-4, 5.0e-3]
+  batch_norm: [false, true]
+
+budgets:
+  cora:       {n_configs: 15, seeds: [0, 1, 2], epochs: 200, patience: 50, eval_every: 5}
+  citeseer:   {n_configs: 15, seeds: [0, 1, 2], epochs: 200, patience: 50, eval_every: 5}
+  pubmed:     {n_configs: 15, seeds: [0, 1, 2], epochs: 200, patience: 50, eval_every: 5}
+  ogbn-arxiv: {n_configs: 5,  seeds: [0, 1],    epochs: 100, patience: 30, eval_every: 10}
+
+scope_exclusion: >
+  No model that requires fine-tuning a pretrained language model.  This excludes
+  the top of the ogbn-arxiv leaderboard and is stated as a limitation.
+
+resampling:
+  n_bootstrap: 4000
+  scheme: joint instance bootstrap

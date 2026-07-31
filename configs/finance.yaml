@@ -1,0 +1,35 @@
+# Finance testbed configuration.  Every number the analysis scripts use that is
+# not derived from data appears here or in the script's module constants, never
+# inline in a function body.
+
+min_months: 60          # a strategy needs this many monthly observations
+seed: 20260801
+newey_west_lags: 6      # Bartlett kernel truncation for the HAC standard errors
+
+populations:
+  known_null: ticker    # 19,380 signals from letters of the ticker symbol
+  known_signal: pastret # 19,402 signals from lagged own returns
+weightings: [ew, vw]
+
+statistics:
+  - t_stat
+  - t_stat_nw
+  - capm_alpha_t
+  - ff5_alpha_t
+
+factor_models:
+  capm: [mktrf]
+  ff5: [mktrf, smb, hml, rmw, cma]
+
+null_estimation:
+  n_permutations: 20000
+  n_permutations_independent_control: 4000
+  n_bootstrap_maxt: 400
+  gpd_threshold_quantile: 0.95
+  gpd_stability_quantiles: [0.80, 0.85, 0.90, 0.95, 0.975]
+  cutoffs: [2.0, 2.5, 3.0, 3.5, 4.0]
+  alphas: [0.10, 0.05, 0.01]
+
+volatility_regime:
+  window_months: 24     # trailing, so the label is knowable in real time
+  min_periods: 18
