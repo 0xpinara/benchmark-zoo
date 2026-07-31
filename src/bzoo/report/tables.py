@@ -1,0 +1,222 @@
+"""Emit LaTeX tables straight into ``paper/tables/``.
+
+No number in the paper is typed by hand.  Every table is written by a
+function here, included with ``\\input`` from the paper source, and carries a
+comment naming the script that produced it and when.  If a result changes,
+the table changes on the next ``make``, and there is no opportunity for the
+text and the table to drift apart.
+
+The formatting is deliberately plain: ``booktabs`` rules, no colour, no
+vertical lines.  Tables have to be legible in greyscale at half width.
+"""
+
+from __future__ import annotations
+
+import datetime as _dt
+from typing import Dict, Iterable, Optional, Sequence
+
+import numpy as np
+import pandas as pd
+
+from ..paths import TABLES, ensure_dirs
+
+_ESCAPES = {
+    "&": r"\&",
+    "%": r"\%",
+    "$": r"\$",
+    "#": r"\#",
+    "_": r"\_",
+    "{": r"\{",
+    "}": r"\}",
+    "~": r"\textasciitilde{}",
+    "^": r"\textasciicircum{}",
+}
+
+
+def escape(text: object) -> str:
+    s = str(text)
+    return "".join(_ESCAPES.get(ch, ch) for ch in s)
+
+
+def fmt(
+    x: object,
+    digits: int = 3,
+    dashes_for_nan: bool = True,
+    escape_strings: bool = False,
+) -> str:
+    """Format one cell.  Integers stay integers, NaN becomes an en dash."""
+    if x is None:
+        return "--" if dashes_for_nan else ""
+    if isinstance(x, (bool, np.bool_)):
+        return "yes" if x else "no"
+    if isinstance(x, (int, np.integer)):
+        return f"{int(x):,}".replace(",", r"\,")
+    if isinstance(x, (float, np.floating)):
+        v = float(x)
+        if not np.isfinite(v):
+            if np.isnan(v):
+                return "--" if dashes_for_nan else ""
+            return r"$\infty$" if v > 0 else r"$-\infty$"
+        if v != 0 and (abs(v) < 10 ** (-digits) or abs(v) >= 1e6):
+            mant, exp = f"{v:.{max(1, digits - 1)}e}".split("e")
+            return rf"${mant}\times 10^{{{int(exp)}}}$"
+        return f"{v:.{digits}f}"
+    return escape(x) if escape_strings else str(x)
+
+
+_SPECIALS = ("_", "%", "#", "&")
+
+
+def _reject_unescaped(cell: str, column: object) -> None:
+    """Raise if a cell holds a LaTeX special that is not inside mathematics.
+
+    With ``escape_cells=False`` a value like ``known_null`` compiles to
+    "Missing $ inserted" and stops the document, and the failure surfaces as a
+    LaTeX error a long way from its cause.  The heuristic is deliberately blunt:
+    a cell containing ``$`` is assumed to be deliberate mathematics and is left
+    alone, and anything else containing a special is a bug in the caller.
+    """
+    if "$" in cell:
+        return
+    for ch in _SPECIALS:
+        i = cell.find(ch)
+        while i != -1:
+            if i == 0 or cell[i - 1] != "\\":
+                raise ValueError(
+                    f"cell {cell!r} in column {column!r} contains an unescaped "
+                    f"{ch!r}. Either clean the value or pass escape_cells=True."
+                )
+            i = cell.find(ch, i + 1)
+
+
+def dataframe_to_latex(
+    df: pd.DataFrame,
+    caption: str,
+    label: str,
+    digits: "int | Dict[str, int]" = 3,
+    column_format: Optional[str] = None,
+    notes: Optional[str] = None,
+    index: bool = False,
+    rules_after: Sequence[int] = (),
+    escape_cells: bool = False,
+) -> str:
+    """Render a frame as a standalone ``table`` environment.
+
+    ``digits`` may be a single number or a per-column mapping.  ``rules_after``
+    inserts a ``\\midrule`` after the given zero-based row positions, which is
+    how the panels inside one table are separated.
+
+    Column headers are never escaped, and string cells are escaped only when
+    ``escape_cells=True``.  Everything that reaches a table here is written by
+    this project, not read from an untrusted source, and the labels contain
+    deliberate mathematics such as ``$\\Pr(|t|>3)$`` that escaping would
+    destroy.  Turn ``escape_cells`` on if a column ever carries a value that
+    could contain a LaTeX special character.
+    """
+    body = df.reset_index() if index else df
+    cols = list(body.columns)
+    if column_format is None:
+        column_format = "l" + "r" * (len(cols) - 1)
+
+    def digits_for(col: str) -> int:
+        return digits[col] if isinstance(digits, dict) and col in digits else (
+            3 if isinstance(digits, dict) else int(digits)
+        )
+
+    header = " & ".join(rf"\textbf{{{c}}}" for c in cols) + r" \\"
+    lines = []
+    for pos, (_, row) in enumerate(body.iterrows()):
+        cells = [
+            fmt(row[c], digits_for(c), escape_strings=escape_cells) for c in cols
+        ]
+        if not escape_cells:
+            for c, cell in zip(cols, cells):
+                _reject_unescaped(cell, c)
+        lines.append(" & ".join(cells) + r" \\")
+        if pos in rules_after:
+            lines.append(r"\midrule")
+
+    stamp = _dt.date.today().isoformat()
+    out = [
+        f"% generated by bzoo.report.tables on {stamp}; do not edit by hand",
+        r"\begin{table}[t]",
+        r"\centering",
+        rf"\caption{{{caption}}}",
+        rf"\label{{{label}}}",
+        rf"\begin{{tabular}}{{{column_format}}}",
+        r"\toprule",
+        header,
+        r"\midrule",
+        *lines,
+        r"\bottomrule",
+        r"\end{tabular}",
+    ]
+    if notes:
+        out.append(r"\vspace{2pt}")
+        out.append(r"\begin{minipage}{\linewidth}\footnotesize " + notes + r"\end{minipage}")
+    out.append(r"\end{table}")
+    return "\n".join(out) + "\n"
+
+
+def write_table(name: str, text: str) -> None:
+    ensure_dirs()
+    path = TABLES / f"{name}.tex"
+    path.write_text(text)
+    print(f"wrote {path}")
+
+
+def write_dataframe(
+    name: str,
+    df: pd.DataFrame,
+    caption: str,
+    label: str,
+    **kwargs,
+) -> None:
+    write_table(name, dataframe_to_latex(df, caption, label, **kwargs))
+
+
+def macro_name(key: str) -> str:
+    """``bzoo`` plus the key, with underscores removed by camel-casing.
+
+    Keys are written camelCase already, so a key with no underscore passes
+    through unchanged and ``\\bzoonullFfSdVw`` is the macro for ``nullFfSdVw``.
+    LaTeX command names cannot contain digits or underscores, so both are
+    rejected rather than silently mangled.
+    """
+    parts = str(key).split("_")
+    name = parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:])
+    macro = "bzoo" + name
+    if not macro.isalpha():
+        raise ValueError(
+            f"macro name from key {key!r} is {macro!r}, which is not a legal "
+            "LaTeX command name (letters only)"
+        )
+    return macro
+
+
+def write_macros(name: str, values: Dict[str, object], digits: int = 3) -> None:
+    """Write single numbers as LaTeX macros for use in running text.
+
+    A sentence like "the null standard deviation is 1.42" should not have the
+    number typed into the prose either.  This emits
+    ``\\newcommand{\\bzoonullFfSdVw}{1.405}`` and the text uses the macro, so
+    the prose cannot go stale.
+
+    Pass a ``(value, digits)`` tuple instead of a bare value to override the
+    number of decimals for one entry.
+    """
+    ensure_dirs()
+    lines = [
+        f"% generated by bzoo.report.tables on {_dt.date.today().isoformat()}",
+        "% do not edit by hand; every number in the paper text comes from here",
+    ]
+    for key, val in values.items():
+        macro = macro_name(key)
+        if isinstance(val, tuple) and len(val) == 2:
+            val, d = val
+        else:
+            d = digits
+        lines.append(rf"\newcommand{{\{macro}}}{{{fmt(val, d)}\xspace}}")
+    path = TABLES / f"{name}.tex"
+    path.write_text("\n".join(lines) + "\n")
+    print(f"wrote {path} ({len(values)} macros)")

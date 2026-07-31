@@ -1,0 +1,55 @@
+# Corrections and their sources.  The `equation` field is the place in the
+# source paper the implementation follows; the tests reference the same place.
+
+alpha: 0.05
+n_trials_grid: [10, 100, 1000, 10000, 100000]
+
+methods:
+  bonferroni:
+    type: FWER
+    dependence: none (independence assumed)
+    source: Bonferroni (1936)
+  sidak:
+    type: FWER
+    dependence: none (exact under independence)
+    source: Sidak (1967), JASA 62, 626-633
+  holm:
+    type: FWER step-down
+    dependence: arbitrary
+    source: Holm (1979), Scand. J. Statist. 6, 65-70
+  benjamini_hochberg:
+    type: FDR step-up
+    dependence: independence or positive regression dependence
+    source: Benjamini and Hochberg (1995), JRSS-B 57, 289-300
+  benjamini_yekutieli:
+    type: FDR step-up
+    dependence: arbitrary
+    source: Benjamini and Yekutieli (2001), Ann. Statist. 29, 1165-1188
+  storey_qvalues:
+    type: pFDR
+    dependence: weak
+    source: Storey (2002), JRSS-B 64, 479-498; Storey, Taylor and Siegmund (2004)
+  white_reality_check:
+    type: FWER bootstrap, single composite hypothesis
+    dependence: learned from the resampling
+    source: White (2000), Econometrica 68, 1097-1126
+  hansen_spa:
+    type: FWER bootstrap, studentised and recentred
+    dependence: learned from the resampling
+    source: Hansen (2005), JBES 23, 365-380
+  romano_wolf:
+    type: FWER step-down bootstrap
+    dependence: learned from the resampling
+    source: Romano and Wolf (2005), Econometrica 73, 1237-1282
+  westfall_young:
+    type: FWER permutation, max-T and min-P
+    dependence: native
+    source: Westfall and Young (1993), Resampling-Based Multiple Testing
+  harvey_liu_zhu:
+    type: haircuts on a reported Sharpe ratio
+    dependence: partial
+    source: Harvey, Liu and Zhu (2016), RFS 29, 5-68; Harvey and Liu (2015), JPM 42(1)
+  deflation:
+    type: single-trial, via N and sigma
+    dependence: through the effective N
+    source: Bailey and Lopez de Prado (2014), JPM 40(5), 94-107
