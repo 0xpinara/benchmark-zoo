@@ -520,3 +520,61 @@ constraint to the survival result and credited Chen and Dim for reaching the
 same conclusion first. Replaced five hand-typed numbers with macros, dropped a
 duplicated decile panel, and consolidated the two macros that held the same
 quantity.
+
+---
+
+## 2026-08-01 — Reframing from a finance paper to a data-mining paper
+
+The result is about screening statistics in general and was written as a
+finance paper. This round moves the framing without moving the evidence.
+
+**The organising idea, which we did not have before.** The confidence of an
+association rule between independent items is the marginal frequency of the
+consequent, not zero, so screening on confidence harvests frequent consequents.
+Data mining's answer was not a stricter threshold but a re-centred statistic:
+lift. A factor-model alpha is confidence, not lift, and our remedy section is
+the asset-pricing version of a move data mining made in 1997. Saying that makes
+the paper general rather than a finance paper in a CS venue, and it costs
+nothing because the analysis is unchanged.
+
+Title is now `Screening on the Wrong Null: When a No-Content Hypothesis Does
+Not Imply a Zero Statistic`. Abstract leads with the general failure mode and
+gives finance as the population where it can be measured against ground truth.
+Introduction restructured to four movements: search needs a null, the
+association-rule precedent, why finance is the testbed rather than the subject,
+the identity and the result. Related work reordered so pattern discovery leads
+and the factor zoo becomes the application domain. Conclusion generalised.
+
+**New Section~\ref{sec:instances}, three further instances, no computation.**
+Accuracy against a uniform baseline when a majority-class predictor scores the
+base rate; sampled-negative recommendation metrics (Krichene and Rendle 2020);
+and improvement over an estimated baseline, which is the object Hansen's
+recentring exists to fix. Each has the same shape: the no-content value of the
+statistic is not the value the threshold is set against.
+
+**`bzoo` promoted** from the fourth item in a contribution list to its own
+section, with the two design decisions that follow from the paper's argument
+written down: no default null anywhere in the API, and a test per correction
+against a published worked example.
+
+**Cut and compressed.** The ethics section was long, defensive and
+finance-shaped; it is now one paragraph headed Broader impact. The survival
+material was about a third of the body and is the demoted result --- one
+paragraph in the body, the table and the dependence-aware procedures in an
+appendix. The quarters reading decision went from twelve lines to four with a
+pointer to the code. Robustness moved ahead of the remedy so the general
+material closes the paper.
+
+**Verified rather than acted on.** Two items in the critique were already
+correct in the draft: the winner's raw-return $t$ is $-2.74$, so the "losing
+22.7 bps" prose is right (the critic was reading an earlier draft where I had
+stripped the signs), and the thresholds caption already states $M = 14{,}535$
+and separates the marginal spread from the $\alpha = 0$ permutation. Also
+softened "which the literature conflates" to a claim about reporting practice,
+since we cite no instance of the conflation, and corrected "six benchmark
+models" to five models plus the raw return, since $K = 0$ is not a model.
+
+**Not done.** The document class is still `neurips_2023`, which is right for
+arXiv and NeurIPS and wrong for DMKD or KAIS. That is a venue decision, and it
+sets the length target, so it should be made before the next full pass rather
+than guessed at here.
