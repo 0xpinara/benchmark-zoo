@@ -418,6 +418,8 @@ def write_macros(d: dict, c: dict) -> None:
         "amObservedAlphaBpsShort": (
             d["a4_sqrt_t"]["vw"]["persistence_fit"]["observed_sd_alpha_bps"][0], 1),
         "amCorrSquaredVw": (d["a2_slope_one"]["vw"]["corr_squared"], 2),
+        "amWinnerExposureSharePct": (
+            100 * abs(a7["exposure_bps_per_month"] / a7["alpha_bps_per_month"]), 0),
         "amTimesNominal": (
             d["a1_across_models"]["vw"][4]["frac_abs_gt_300"] / 0.0027, 0),
     })
