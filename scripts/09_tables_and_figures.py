@@ -834,6 +834,16 @@ def main() -> int:
         macros["momentumMedianTEw"] = (
             sanity["check3_known_signals"]["ew"]["momentum"]["median_t"], 2)
 
+    # Worst calibrated/observed exceedance ratio, value-weighted: quoted in the
+    # robustness section and previously typed by hand.
+    try:
+        rb = json.loads((RESULTS / "robustness.json").read_text())
+        ex = rb["r1_expanding_window"]["vw"]["exceedances"]
+        worst = max(e["ratio_calibrated"] for e in ex)
+        macros["expWindowWorstRatioVw"] = (worst, 1)
+    except Exception as exc:  # noqa: BLE001 - a missing number is reported
+        print(f"WARNING: could not compute expWindowWorstRatioVw: {exc}")
+
     _fill_missing_macros(macros)
     tables.write_macros("macros", macros, digits=3)
 

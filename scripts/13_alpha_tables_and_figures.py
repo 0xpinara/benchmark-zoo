@@ -174,6 +174,40 @@ def table_alt_population(d: dict) -> None:
     )
 
 
+def table_corrections_on_null(c: dict) -> None:
+    """The direct test: run the corrections on a population with no content."""
+    rows = []
+    labels = [("uncorrected", "Uncorrected ($|t|>1.96$)"),
+              ("bonferroni", "Bonferroni"), ("sidak", "\\v{S}id\\'ak"),
+              ("holm", "Holm"), ("benjamini_hochberg", "Benjamini--Hochberg"),
+              ("benjamini_yekutieli", "Benjamini--Yekutieli")]
+    vw = c["c1_survival"]["vw"]
+    for key, label in labels:
+        rows.append({
+            "Correction": label,
+            "Mean return $t$": vw["mean_return_t"]["whole_population"][key],
+            "Five-factor $\\alpha$ $t$": vw["ff5_alpha_t"]["whole_population"][key],
+        })
+    tables.write_dataframe(
+        "corrections_on_null",
+        pd.DataFrame(rows),
+        caption=(
+            "Multiplicity corrections applied to 19{,}380 strategies that have "
+            "no economic content by construction, value-weighted, with the "
+            "family size set to the full 19{,}380 and the nominal standard "
+            "normal used as the null. Every rejection in this table is a false "
+            "one. A 5 percent family-wise procedure promises at most a 5 "
+            "percent chance of \\emph{any} rejection across the family; on the "
+            "raw mean return Bonferroni delivers that and rejects nothing, and "
+            "on the five-factor alpha it rejects 69 times. The multiplicity "
+            "arithmetic is not what fails --- the null it is applied to is."
+        ),
+        label="tab:corrections-on-null",
+        digits=0,
+        column_format="lrr",
+    )
+
+
 def figure_across_models(d: dict) -> None:
     figures.setup_style()
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.4))
@@ -224,30 +258,26 @@ def figure_across_models(d: dict) -> None:
 
 
 def figure_exposure_dose_response(d: dict) -> None:
+    """Persistence, on its own.
+
+    This used to carry the exposure deciles in a left panel, which duplicated
+    the right panel of the across-models figure and paired the paper's
+    strongest exhibit with its most qualified one.  The decile comparison
+    against R^2 now lives in the table, where the numbers can be read off.
+    """
     figures.setup_style()
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.4))
+    fig, ax = plt.subplots(figsize=(5.2, 3.4))
 
-    ax = axes[0]
-    for key, lab, mark in (("by_abs_exposure", r"binned on $|\hat\beta'\bar f|$", "o"),
-                           ("by_r2", r"binned on $R^2$", "s")):
-        rows = d["a3_within_population"]["vw"][key]
-        ax.plot([r["bin"] for r in rows], [r["sd_alpha_t"] for r in rows],
-                marker=mark, label=lab)
-    ax.axhline(1.0, color="0.4", ls="--", lw=1)
-    ax.set_xlabel("Decile")
-    ax.set_ylabel(r"SD($t_\alpha$)")
-    ax.legend(frameon=False, fontsize=8)
-
-    ax = axes[1]
     p = d["a4_sqrt_t"]["vw"]["persistence_fit"]
     tt = [r["T"] for r in d["a4_sqrt_t"]["vw"]["windows"]]
-    ax.plot(tt, p["observed_sd_alpha_bps"], marker="o", label=r"observed SD($\hat\alpha$)")
+    ax.plot(tt, p["observed_sd_alpha_bps"], marker="o",
+            label=r"observed SD($\hat\alpha$)")
     ax.plot(tt, p["pure_noise_sd_alpha_bps"], marker="s", ls="--",
             label=r"pure estimation noise ($\propto 1/\sqrt{T}$)")
     dj = d["a4_sqrt_t"]["vw"]["disjoint"]
     ax.axhline(dj["sd_persistent_bps"], color="0.4", ls=":", lw=1)
     ax.text(tt[-1], dj["sd_persistent_bps"] + 0.4,
-            "  persistent across decades", color="0.4", fontsize=7,
+            "persists across decades  ", color="0.4", fontsize=7,
             va="bottom", ha="right")
     ax.set_xlabel("Window length $T$ (months, most recent)")
     ax.set_ylabel("Basis points per month")
@@ -258,7 +288,7 @@ def figure_exposure_dose_response(d: dict) -> None:
     figures.save(fig, "exposure_dose_response")
 
 
-def write_macros(d: dict) -> None:
+def write_macros(d: dict, c: dict) -> None:
     vw = {r["model"]: r for r in d["a1_across_models"]["vw"]}
     ew = {r["model"]: r for r in d["a1_across_models"]["ew"]}
     a2, a4 = d["a2_slope_one"]["vw"], d["a4_sqrt_t"]["vw"]
@@ -355,17 +385,55 @@ def write_macros(d: dict) -> None:
         "amTickerWideningVw": (
             vw["K5_ff5"]["sd_alpha_bps"] / vw["K0_raw_mean"]["sd_alpha_bps"], 2),
     }
+    vwa = c["c1_survival"]["vw"]["ff5_alpha_t"]
+    vwm = c["c1_survival"]["vw"]["mean_return_t"]
+    split = c["c2_variance_split"]["vw"]
+    cov = c["c3_split_sample_covariance"]["vw"]
+    fam = {r["family_size"]: r for r in vwa["by_family_size"]}
+    values.update({
+        # C1
+        "amBonfCrit": (vwa["whole_population"]["bonferroni_critical_value"], 2),
+        "amBonfFalseAlpha": vwa["whole_population"]["bonferroni"],
+        "amBonfFalseMean": vwm["whole_population"]["bonferroni"],
+        "amBhFalseAlpha": vwa["whole_population"]["benjamini_hochberg"],
+        "amBhFalseMean": vwm["whole_population"]["benjamini_hochberg"],
+        "amUncorrFalseAlpha": vwa["whole_population"]["uncorrected"],
+        "amMeasuredBonfCrit": (vwa["measured_null"]["bonferroni_critical_value"], 2),
+        "amMeasuredBonfFalse": vwa["measured_null"]["bonferroni"],
+        "amFamFiftyBonf": (fam[50]["expected_bonferroni"], 2),
+        "amFamFiftyAnyPct": (fam[50]["any_false_rejection_bonferroni"] * 100, 0),
+        "amFamTenAnyPct": (fam[10]["any_false_rejection_bonferroni"] * 100, 0),
+        # C2
+        "amCOne": (split["c1_sample_specific"], 2),
+        "amCTwoT": (split["c2T_persistent"], 3),
+        "amCOneSharePct": (split["share_of_excess_from_c1"] * 100, 0),
+        "amCTwoSharePct": (split["share_of_excess_from_c2T"] * 100, 0),
+        "amTEqualYears": (split["T_where_c2T_equals_c1"] / 12.0, 0),
+        # C3
+        "amCovInSampleBps": (cov["full_sample_in_sample"]["cov_bps2"], 1),
+        "amCovOosBps": (cov["second_half_beta_from_first_half"]["cov_bps2"], 1),
+        "amCovOosLoBps": (cov["oos_cov_ci95_bps2"][0], 1),
+        "amCovOosHiBps": (cov["oos_cov_ci95_bps2"][1], 1),
+        # Numbers that were typed by hand in the prose until now.
+        "amObservedAlphaBpsShort": (
+            d["a4_sqrt_t"]["vw"]["persistence_fit"]["observed_sd_alpha_bps"][0], 1),
+        "amCorrSquaredVw": (d["a2_slope_one"]["vw"]["corr_squared"], 2),
+        "amTimesNominal": (
+            d["a1_across_models"]["vw"][4]["frac_abs_gt_300"] / 0.0027, 0),
+    })
     tables.write_macros("macros_alpha", values, digits=3)
 
 
 def main() -> int:
     d = json.loads((RESULTS / "alpha_mechanism.json").read_text())
+    c = json.loads((RESULTS / "corrections_on_null.json").read_text())
     table_across_models(d)
+    table_corrections_on_null(c)
     table_exposure_deciles(d)
     table_alt_population(d)
     figure_across_models(d)
     figure_exposure_dose_response(d)
-    write_macros(d)
+    write_macros(d, c)
     return 0
 
 
