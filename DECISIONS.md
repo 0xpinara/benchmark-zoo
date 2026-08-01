@@ -444,3 +444,79 @@ deliberately weaker configuration sweep, not more seeds.
 deflation grid) because the loop guarded on `available` and not on
 `sigma_delta_estimable`. Fixed to emit the descriptive macros and skip the
 deflation ones.
+
+---
+
+## 2026-08-01 — Testing the headline claim, and narrowing it
+
+A second round of external critique made one observation that turned out to be
+decisive: the paper asserted that no multiplicity correction is a remedy for
+this channel and never applied a multiplicity correction to the null
+population. We have twelve corrections and 19,380 strategies where every
+rejection is false by construction. `scripts/14_corrections_on_the_null.py`
+runs the test.
+
+**The claim survives, but only in a narrower form.** Bonferroni at the full
+family size of 19,380 with the textbook null rejects 0 strategies on the raw
+mean return -- exactly the family-wise control it promises -- and 69 on the
+five-factor alpha. Benjamini-Hochberg rejects 0 and 995. Same strategies, same
+correction, same M; only the statistic changed. So the critique's expectation
+that "Bonferroni mostly holds" was wrong, and the alarming version of our claim
+is supported at the whole-population level and at every smaller family size we
+checked: with fifty candidate signals Bonferroni still has an 85 percent chance
+of at least one false positive against the 5 percent it promises.
+
+**But the same script shows the correction is not what is broken.** Keep
+Bonferroni, keep M = 19,380, and substitute the measured null for the standard
+normal, and the 69 false rejections go to 0. So "no multiplicity correction is
+a remedy" was too strong and is now "no correction applied with the *nominal*
+null addresses this channel; one applied with a *measured* null does, and the
+measurement is the hard part because it is a property of the candidate
+population's exposures". The paper is more defensible for the change, and it
+also removes a real internal contradiction: the remedy section already
+recommended a measured cutoff on the same statistic, which made no sense if
+the statistic itself were beyond repair.
+
+**Why a fixed rescaling suffices.** Splitting
+`Var(t_alpha) = 1 + c1 + c2*T`, where c1 is the sample-specific exposure term
+and c2*T the persistent one, gives c1 = 0.73 and c2*T = 0.027 value-weighted:
+96 percent of the excess is a fixed scale inflation, and the growing part would
+take on the order of 1,600 years of data to matter as much. The critique
+predicted this from the disjoint-block persistence result and it was right.
+
+**Three things I got wrong and corrected.**
+
+*The prose said "one clears Bonferroni at the full trial count."* That was meant
+as "the largest one clears" and reads as "exactly one clears". It misled the
+critic into concluding Bonferroni was working. The number is 69.
+
+*The claim that in-sample beta estimation manufactures the negative
+Cov(rbar, beta'fbar).* I wrote that estimating both on the same half turns the
+covariance positive "which is the sign the mechanical coupling produces". Then
+I simulated it: for OLS with an intercept the coupling term is proportional to
+the sum of the demeaned regressor and is exactly zero, with independent
+residuals and with a shared common shock alike. So there is no mechanical
+coupling and that sentence was wrong.
+
+*What the covariance actually is.* Working the algebra rather than guessing:
+`Cov_i(rbar, beta'fbar) = (fbar - mu_f)' Sigma_beta fbar`, a realised quadratic
+form in the sample factor means. Its expectation over samples is
+`trace(Sigma_beta Var(fbar))`, which is positive, and simulation confirms it --
+positive on average, negative in 44 percent of draws. So a negative value in
+our sample is neither evidence the population fails to be null nor an artefact;
+it is sample-specific, which is the same thing the c1/c2 split says. We now
+build no claim on its sign.
+
+**Also this round.** Added Novy-Marx (2014) and distinguished it explicitly:
+his nonsense predictors are a data-mining result, which is what a correction is
+designed to catch, and ours are not selected at all. Added Lo and MacKinlay
+(1990), Ferson, Sarkissian and Simin (2003), Fama and French (2010) and Harvey
+and Liu (2020). Made the recommended cutoff procedural rather than a number,
+since the paper contains its own evidence that 3.04 does not transfer, and
+noted that a ticker letter induces exposure accidentally while a real candidate
+signal is related to size and value by construction -- so our figure is a lower
+bound. Promoted "What to do instead" to a section. Connected the zero-sum
+constraint to the survival result and credited Chen and Dim for reaching the
+same conclusion first. Replaced five hand-typed numbers with macros, dropped a
+duplicated decile panel, and consolidated the two macros that held the same
+quantity.
