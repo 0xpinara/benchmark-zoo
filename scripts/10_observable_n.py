@@ -30,6 +30,7 @@ every table has to span them, and it does: from 10 to 100,000.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from typing import Dict, List
@@ -42,7 +43,11 @@ from bzoo.finance import loaders
 from bzoo.paths import RAW, RESULTS, ensure_dirs
 
 OPENALEX = "https://api.openalex.org/works/doi:{doi}"
-MAILTO = "aksoy.p@northeastern.edu"  # OpenAlex asks for a contact address
+# OpenAlex asks for a contact address so it can put the caller in its "polite
+# pool", which is faster and more reliable.  Anonymised here; set OPENALEX_MAIL
+# in the environment to restore that behaviour, or leave it and accept the
+# common pool.
+MAILTO = os.environ.get("OPENALEX_MAIL", "anonymous@example.com")
 
 BENCHMARK_PAPERS = {
     "ogb": {

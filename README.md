@@ -22,7 +22,7 @@ The package has two halves that share one statistical core.
 ## Install
 
 ```bash
-git clone https://github.com/0xpinara/benchmark-zoo && cd benchmark-zoo
+git clone https://anonymous.4open.science/r/benchmark-zoo && cd benchmark-zoo
 make env            # python3 -m venv .venv, then pip install -e ".[dev,ml]"
 make test           # the test suite, no data needed
 ```
@@ -172,10 +172,10 @@ See `DATASHEET.md`.
 ## Citation
 
 ```bibtex
-@misc{aksoy2026benchmarkzoo,
+@misc{anon2026benchmarkzoo,
   title  = {The Benchmark Zoo: Calibrating Multiplicity Corrections
             Against a Known-Null Population},
-  author = {Aksoy, P\i nar and Toroslu, \.Ismail Hakk\i},
+  author = {Anonymous},
   year   = {2026}
 }
 ```

@@ -10,8 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
-  { name = "Pinar Aksoy" },
-  { name = "Ismail Hakki Toroslu" },
+  { name = "Anonymous" },
 ]
 dependencies = [
   "numpy>=1.24",
