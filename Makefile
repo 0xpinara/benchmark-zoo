@@ -7,7 +7,8 @@ PY := ./.venv/bin/python
 DROPBOX_HTAP := "https://www.dropbox.com/scl/fo/qd3aw9x8eje18tiy7gqm2/h?rlkey=6h07i9npnf852x92uqe6nebgn&dl=1"
 
 .PHONY: all env fetch data sanity calibrate validate reevaluate sweep sweep-arxiv \
-        mlanalysis observen robust tables figures paper overleaf test clean help
+        mlanalysis observen robust mechanism nulltest tables figures paper \
+        overleaf test clean help
 
 help:
 	@echo "make env         create the virtual environment and install the package"
@@ -24,6 +25,8 @@ help:
 	@echo "make tables      emit every .tex table and macro"
 	@echo "make figures     emit every figure"
 	@echo "make observen    observable trial counts from leaderboard and citations"
+	@echo "make mechanism   the exposure channel: dose-response, deciles, placebo"
+	@echo "make nulltest    run the twelve corrections on the known-null population"
 	@echo "make overleaf    self-contained, validated folder and zip for Overleaf"
 	@echo "make all         everything above, in order"
 
@@ -75,7 +78,13 @@ robust: mlanalysis reevaluate
 mechanism: validate
 	$(PY) scripts/12_alpha_mechanism.py
 
-tables figures: robust observen mechanism
+# Every rejection here is false by construction, so this is what says whether a
+# correction fixes the exposure channel or only the count.  Script 13 reads the
+# JSON it writes, so it has to run before the tables.
+nulltest: mechanism
+	$(PY) scripts/14_corrections_on_the_null.py
+
+tables figures: robust observen mechanism nulltest
 	$(PY) scripts/09_tables_and_figures.py
 	$(PY) scripts/13_alpha_tables_and_figures.py
 
@@ -89,7 +98,7 @@ paper: tables
 overleaf: tables
 	$(PY) scripts/11_package_paper.py
 
-all: reevaluate mlanalysis observen robust mechanism tables overleaf
+all: reevaluate mlanalysis observen robust mechanism nulltest tables overleaf
 
 test:
 	$(PY) -m pytest tests -q
