@@ -21,3 +21,39 @@ jobs:
           python -m pip install -e ".[dev]"
       - name: Run the test suite
         run: python -m pytest tests -q
+
+  # The tables and figures in paper/ are generated, and the paper reads numbers
+  # out of them through macros.  If a script changes what it emits and the text
+  # is not updated, the compile is where that shows up, so it runs here rather
+  # than on somebody's laptop the night before a deadline.
+  paper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Install tectonic
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh
+          sudo mv tectonic /usr/local/bin/
+      - name: Check the sources before compiling
+        run: python scripts/11_package_paper.py
+      - name: Compile
+        run: cd paper && tectonic main.tex --print
+      - name: Fail on an overfull box or an undefined reference
+        run: |
+          cd paper
+          tectonic main.tex --keep-logs >/dev/null 2>&1
+          ! grep -q Overfull main.log
+          ! grep -q "LaTeX Warning: Reference .* undefined" main.log
+          ! grep -q "LaTeX Warning: Citation .* undefined" main.log
+          ! grep -q "Repeated entry" main.blg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper
+          path: paper/main.pdf
