@@ -8,6 +8,11 @@ text and the table to drift apart.
 
 The formatting is deliberately plain: ``booktabs`` rules, no colour, no
 vertical lines.  Tables have to be legible in greyscale at half width.
+
+Every table is wrapped in an ``adjustbox`` with ``max width=\\linewidth``, so
+the paper needs ``\\usepackage{adjustbox}``.  That is the one formatting thing
+the emitter cannot decide from the data: how wide a table renders depends on
+the font and the text block, not on the frame.
 """
 
 from __future__ import annotations
@@ -143,6 +148,10 @@ def dataframe_to_latex(
         r"\centering",
         rf"\caption{{{caption}}}",
         rf"\label{{{label}}}",
+        # max width rather than a fixed resize: a table that already fits is
+        # left at body size, and only a table that would run into the margin
+        # is shrunk.  Four of them did, one by two and a half inches.
+        r"\begin{adjustbox}{max width=\linewidth}",
         rf"\begin{{tabular}}{{{column_format}}}",
         r"\toprule",
         header,
@@ -150,6 +159,7 @@ def dataframe_to_latex(
         *lines,
         r"\bottomrule",
         r"\end{tabular}",
+        r"\end{adjustbox}",
     ]
     if notes:
         out.append(r"\vspace{2pt}")
