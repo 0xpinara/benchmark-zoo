@@ -7,7 +7,7 @@ set up.
 ```
 main.tex               the paper
 neurips_2023.sty       official NeurIPS style file, unmodified
-references.bib         bibliography, 69 entries
+references.bib         bibliography, 68 entries
 tables/                16 generated .tex tables, plus macros.tex and
                        macros_alpha.tex
 figures/               6 generated .pdf figures, 5 of them used
