@@ -9,8 +9,9 @@ description = "Multiplicity corrections with an empirically calibrated null, for
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
+keywords = ["multiple testing", "false discovery", "asset pricing", "benchmarks"]
 authors = [
-  { name = "Anonymous" },
+  { name = "Pinar Aksoy", email = "aksoy.p@northeastern.edu" },
 ]
 dependencies = [
   "numpy>=1.24",
