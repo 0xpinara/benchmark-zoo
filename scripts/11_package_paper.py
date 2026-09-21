@@ -57,9 +57,10 @@ def assemble() -> None:
         shutil.copy2(t, OUT / "tables" / t.name)
     for f in sorted(FIGURES.glob("*.pdf")):
         shutil.copy2(f, OUT / "figures" / f.name)
-    readme = PAPER.parent / "overleaf_README.md"
-    if readme.exists():
-        shutil.copy2(readme, OUT / "README.md")
+    readme = PAPER / "overleaf_README.md"
+    if not readme.exists():
+        raise FileNotFoundError(f"no upload instructions at {readme}")
+    shutil.copy2(readme, OUT / "README.md")
 
 
 def validate() -> List[str]:
