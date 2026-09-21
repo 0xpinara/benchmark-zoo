@@ -203,6 +203,18 @@ def test_every_citation_key_is_in_the_bibliography():
     assert not missing, f"cited but not in references.bib: {missing}"
 
 
+@pytest.mark.skipif(not MAIN_TEX.exists(), reason="paper source absent")
+def test_no_bibliography_key_is_defined_twice():
+    """BibTeX does not stop on a repeated key, it prints 'Repeated entry',
+    skips the second copy and carries on, so the citation still resolves and
+    the mistake survives every build.  krichene2020 was in there twice for
+    months that way."""
+    bib = (PAPER / "references.bib").read_text()
+    keys = re.findall(r"@\w+\{([^,]+),", bib)
+    repeated = sorted({k for k in keys if keys.count(k) > 1})
+    assert not repeated, f"defined more than once in references.bib: {repeated}"
+
+
 # ----------------------------------------------------------------------
 # date alignment across sources
 
