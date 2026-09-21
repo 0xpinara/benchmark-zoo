@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "bzoo: multiplicity corrections with a measured null"
+message: "If you use this code, please cite the paper below."
+type: software
+authors:
+  - given-names: Pinar
+    family-names: Aksoy
+    affiliation: Middle East Technical University
+repository-code: "https://github.com/0xpinara/benchmark-zoo"
+license: MIT
+version: 0.1.0
+preferred-citation:
+  type: article
+  title: "Screening on the Wrong Null: When a No-Content Hypothesis Does Not Imply a Zero Statistic"
+  authors:
+    - given-names: Pinar
+      family-names: Aksoy
+      affiliation: Middle East Technical University
+  year: 2026
