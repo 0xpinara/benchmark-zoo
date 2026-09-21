@@ -88,10 +88,17 @@ tables figures: robust observen mechanism nulltest
 	$(PY) scripts/09_tables_and_figures.py
 	$(PY) scripts/13_alpha_tables_and_figures.py
 
+# tectonic if it is installed, because it fetches its own packages and gets
+# the number of passes right on its own; the pdflatex/bibtex/pdflatex/pdflatex
+# dance otherwise.
 paper: tables
-	cd paper && pdflatex -interaction=nonstopmode main.tex && \
+	cd paper && if command -v tectonic >/dev/null 2>&1; then \
+	  tectonic main.tex; \
+	else \
+	  pdflatex -interaction=nonstopmode main.tex && \
 	  bibtex main && pdflatex -interaction=nonstopmode main.tex && \
-	  pdflatex -interaction=nonstopmode main.tex
+	  pdflatex -interaction=nonstopmode main.tex; \
+	fi
 
 # Self-contained folder plus zip for Overleaf, statically validated.  Use this
 # when there is no local LaTeX installation.
