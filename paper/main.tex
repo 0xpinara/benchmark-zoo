@@ -1,10 +1,10 @@
 % ==========================================================================
-%  A Null Return Is Not a Null Alpha:
-%  Risk Adjustment as a False-Discovery Channel
+%  Screening on the Wrong Null:
+%  When a No-Content Hypothesis Does Not Imply a Zero Statistic
 %
-%  Finance-only. The machine learning half of the earlier draft is parked on
-%  a separate branch and tag; nothing was deleted from the repository, only
-%  from this document.
+%  Finance only.  The machine learning half of the earlier draft is parked on
+%  a separate branch; nothing was deleted from the repository, only from this
+%  document.
 %
 %  Every number in this file comes from tables/macros.tex, from
 %  tables/macros_alpha.tex, or from an \input{} of a generated table.  Nothing
@@ -14,14 +14,13 @@
 
 \documentclass{article}
 
-% Anonymous submission build: no option = anonymised authors + line numbers.
-% Swap to [preprint] for arXiv or [final] for camera-ready, and restore the
-% author block below, in the SAME commit that de-anonymises the URL.
-\usepackage{neurips_2023}
-% Non-anonymous preprint build; the repository URL in the abstract is the real
-% one and the repository is public, so this is internally consistent as it
-% stands.  For a double-blind submission, switch to
-% \usepackage[anonymous]{neurips_2023} AND replace the URL, in the same commit.
+% Named preprint build: [preprint] shows the author block and drops the line
+% numbers.  The repository URL in the abstract is the real one and the
+% repository is public, so the build is internally consistent as it stands.
+% For a double-blind submission switch to plain \usepackage{neurips_2023} and
+% replace the URL with an anonymised mirror, in the same commit, or the author
+% is recoverable from the link.
+\usepackage[preprint]{neurips_2023}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -43,10 +42,10 @@
 When a No-Content Hypothesis Does Not Imply a Zero Statistic}
 
 \author{%
-  Anonymous Author(s) \\
-  Affiliation \\
-  Address \\
-  \texttt{email} \\
+  Pinar Aksoy \\
+  Middle East Technical University \\
+  Ankara, Turkey \\
+  \texttt{aksoy.p@northeastern.edu} \\
 }
 
 \begin{document}
@@ -92,7 +91,7 @@ null it is given is, and the remedy is the one data mining already adopted:
 re-centre or re-calibrate the statistic on the candidate population being
 searched. We release \texttt{bzoo}, a tested implementation of twelve
 corrections behind one interface.
-Code: \url{https://anonymous.4open.science/r/benchmark-zoo}.
+Code: \url{https://github.com/0xpinara/benchmark-zoo}.
 \end{abstract}
 
 % ==========================================================================
