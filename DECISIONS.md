@@ -578,3 +578,61 @@ models" to five models plus the raw return, since $K = 0$ is not a model.
 arXiv and NeurIPS and wrong for DMKD or KAIS. That is a venue decision, and it
 sets the length target, so it should be made before the next full pass rather
 than guessed at here.
+
+---
+
+## 2026-09-21 — A pass over everything that was quietly broken
+
+Nothing here changes a result. All of it is the kind of thing that survives
+because it never raises.
+
+**`make all` could not have worked from a clean checkout.** Script 13 reads
+`data/results/corrections_on_null.json`, which only script 14 writes, and
+nothing in the Makefile ran script 14. It worked on this machine because the
+JSON was already sitting there from when I ran the script by hand. Added a
+`nulltest` target between `mechanism` and `tables`. This is the second time an
+"it reproduces" claim has been true only locally, and both times the cause was
+a file that already existed.
+
+**Every Overleaf bundle shipped without its upload instructions.** Script 11
+looked for `overleaf_README.md` in `PAPER.parent`, which is the repository
+root, not in `paper/`. It was guarded by `if readme.exists()`, so the miss was
+silent. Path fixed and the guard replaced with a raise. A guard that hides the
+bug it is guarding against is worse than no guard.
+
+**`krichene2020` was in `references.bib` twice.** BibTeX prints "Repeated
+entry", skips the second copy and carries on, so the citation still resolved
+and the build still produced a PDF. Removed, and there is now a test for it,
+because that failure mode is invisible by design.
+
+**Four tables ran into the margin**, `across_models` by 182pt, which is two and
+a half inches. Every generated `tabular` is now wrapped in an `adjustbox` with
+`max width=\linewidth`, so a table that fits is left at body size and only a
+table that does not is shrunk. 24 overfull boxes to zero. The decision to put
+this in `bzoo.report.tables` rather than in the paper is the same rule as
+everywhere else: if the emitter can enforce it, the emitter enforces it.
+
+**The one runnable thing in the README printed the wrong numbers.**
+`deflated_improvement(0.006, 0.0021, 1000)` returns a threshold of 0.0082 and
+p = 0.882; the README said 0.0071 and 0.121. The prose conclusion was right and
+the numbers were not, which is the worst combination because it reads fine.
+Pinned to real output.
+
+**The datasheet named three directories that do not exist.** `calibration/` and
+`benchmarks/` were never paths in this repository; the artifacts live in
+`data/results/` and `data/interim/`. Also added entries for
+`alpha_mechanism.json` and `corrections_on_null.json`, which had none, and
+which between them carry the central claim.
+
+**De-anonymised.** The blind-submission commit left the repository pointing at
+an `anonymous.4open.science` mirror that does not resolve, and `main.tex`
+carrying two contradictory comment blocks, one saying to anonymise and one
+saying it already was. Author block, licence, package metadata and the URL in
+the abstract are all real now, and there is a `CITATION.cff` so the citation
+cannot drift from the title again.
+
+**CI now compiles the paper.** The tables are generated and the prose reads
+numbers out of them through macros, so a script that changes what it emits
+breaks the paper and not the test suite. The build fails on an overfull box, an
+undefined reference or citation, or a repeated bibliography entry. All four had
+happened at least once.
