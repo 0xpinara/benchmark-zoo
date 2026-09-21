@@ -10,7 +10,7 @@ public web page kept so that the analysis stays reproducible.
 
 ---
 
-## 1. `calibration/empirical_null.json` — the measured null
+## 1. `data/results/empirical_null.json` — the measured null
 
 **What.** The cross-sectional distribution of four test statistics over the
 19,380 ticker-symbol long--short strategies of Chen and Dim, in equal-weighted
@@ -57,7 +57,7 @@ transfers is the method.
 
 ---
 
-## 2. `calibration/null_validation.json` — validation of the known-null claim
+## 2. `data/results/null_validation.json` — validation of the known-null claim
 
 **What.** Four sets of tests on whether the population is really null:
 eighteen alphabeticity subgroup tests with block-bootstrap intervals; the
@@ -87,7 +87,7 @@ and is therefore weaker.
 
 ---
 
-## 3. `benchmarks/ml_runs_<dataset>.parquet` and `ml_correct_<dataset>.npy`
+## 3. `data/interim/ml_runs_<dataset>.parquet` and `ml_correct_<dataset>.npy`
 
 **What.** One row per training run: architecture, configuration id, seed, epoch
 budget, selected epoch, train, validation and test accuracy, parameter count and
@@ -156,12 +156,48 @@ same underlying method may appear under variant names.
 
 ---
 
-## 5. `results/*.json` and `paper/tables/*.tex`
+## 5. `data/results/alpha_mechanism.json` and `corrections_on_null.json`
+
+**What.** The evidence that the widening of the alpha $t$-statistic is the
+factor exposure and not something else, and what a correction does about it.
+`alpha_mechanism.json` holds the dose-response across six factor models, the
+ten exposure deciles, a zero-exposure placebo, a persistent-component estimate
+from five disjoint 120-month blocks, and a second no-content population.
+`corrections_on_null.json` holds the five classical p-value corrections
+(Bonferroni, Šidák, Holm, Benjamini--Hochberg, Benjamini--Yekutieli) applied to
+a population where every rejection is false by construction, at family sizes 1,
+10, 50, 200, 1,000 and the full 19,380, and the split of
+$\mathrm{Var}(t_\alpha)$ into a constant term a calibrated null absorbs and a term growing in $T$ that no fixed threshold
+contains.
+
+**Construction.** `scripts/12_alpha_mechanism.py` and
+`scripts/14_corrections_on_the_null.py`, both from artifact 1's population.
+Seeds fixed and recorded in each file.
+
+**Intended use.** Checking the paper's central claim, which is that the failure
+is in the null the correction is given and not in the multiplicity arithmetic.
+The corrections file is the one place in the project where a false positive
+rate can be counted rather than bounded.
+
+**Not for.** Reading the survival counts as a general false positive rate for
+these corrections. They are the rate on *this* population, whose statistic is
+mis-centred in a specific way, which is the whole point and also the whole
+limitation.
+
+**Known limitations.** The persistent-component estimate uses five disjoint
+blocks, so it has five effective observations per strategy and a wide interval
+(1.62 basis points per month, 95 percent interval 0.63 to 2.28). An earlier
+version fitted nested windows instead, which shared most of their data and gave
+an interval that could not be believed; the change is dated in `DECISIONS.md`.
+
+---
+
+## 6. `data/results/*.json` and `paper/tables/*.tex`
 
 **What.** Every result the paper reports, and the LaTeX source of every table and
 in-text number.
 
-**Construction.** `scripts/02` through `scripts/09`. `make all` regenerates all of
+**Construction.** `scripts/02` through `scripts/14`. `make all` regenerates all of
 it from raw sources in one command. `paper/tables/macros.tex` holds every single
 number that appears in the prose, as `\newcommand` definitions, so the text
 cannot disagree with the tables.
