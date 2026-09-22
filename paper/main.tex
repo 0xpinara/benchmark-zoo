@@ -21,6 +21,11 @@
 % replace the URL with an anonymised mirror, in the same commit, or the author
 % is recoverable from the link.
 \usepackage[preprint]{neurips_2023}
+% [preprint] hardcodes "Preprint. Under review." into the first-page footer.
+% This is not under review anywhere, so the footer says what the document is.
+\makeatletter
+\renewcommand{\@noticestring}{Preprint. \today.}
+\makeatother
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
